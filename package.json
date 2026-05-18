@@ -1,0 +1,21 @@
+{
+  "name": "remesas-facil-proxy",
+  "version": "1.0.0",
+  "description": "Proxy servidor para consultar Binance P2P sin problemas de CORS",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
