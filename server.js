@@ -73,8 +73,8 @@ async function queryBinanceP2P(fiat, tradeType, rows = 5) {
 app.get("/api/rates", async (req, res) => {
   try {
     const [clpData, bobData] = await Promise.all([
-      queryBinanceP2P("CLP", "BUY"),   // Compra USDT en Chile (pagas CLP)
-      queryBinanceP2P("BOB", "SELL"),  // Vende USDT en Bolivia (recibes BOB)
+      queryBinanceP2P("CLP", "BUY"),   // Chile: compradores pagan CLP por USDT → tú obtienes CLP
+      queryBinanceP2P("BOB", "BUY"),   // Bolivia: compradores pagan BOB por USDT → tú obtienes BOB
     ]);
 
     res.json({
@@ -105,7 +105,7 @@ app.get("/api/quote", async (req, res) => {
   try {
     const [clpData, bobData] = await Promise.all([
       queryBinanceP2P("CLP", "BUY"),
-      queryBinanceP2P("BOB", "SELL"),
+      queryBinanceP2P("BOB", "BUY"),
     ]);
 
     const rateClpUsdt = clpData.average;
@@ -144,6 +144,4 @@ app.get("/health", (_req, res) => res.json({ status: "ok" }));
 // ─── Start ───────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`✅ RemesasFácil proxy corriendo en http://localhost:${PORT}`);
-  console.log(`   GET /api/rates          → tasas CLP y BOB`);
-  console.log(`   GET /api/quote?amount=X → cotización completa`);
-});
+  console.log(`   GET /api/rates    
