@@ -42,22 +42,12 @@ async function queryBinanceP2P(fiat, tradeType, rows = 10) {
   }
 
   const prices = data.data.map((d) => parseFloat(d.adv.price));
-  // Tomamos del anuncio 5 al 10 (índices 4 a 9) y promediamos
   const slice = prices.slice(4, 10);
   const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
 
-  return {
-    fiat,
-    tradeType,
-    asset: "USDT",
-    prices,
-    slice,
-    average: avg,
-    timestamp: new Date().toISOString(),
-  };
+  return { fiat, tradeType, asset: "USDT", prices, slice, average: avg, timestamp: new Date().toISOString() };
 }
 
-// GET /api/rates
 app.get("/api/rates", async (req, res) => {
   try {
     const [clpData, bobData] = await Promise.all([
@@ -66,52 +56,29 @@ app.get("/api/rates", async (req, res) => {
     ]);
     res.json({ ok: true, clp: clpData, bob: bobData });
   } catch (err) {
-    console.error("[/api/rates] Error:", err.message);
     res.status(502).json({ ok: false, error: err.message });
   }
 });
 
-// GET /api/quote?amount=100000
 const SERVICE_FEE = 0.015;
 
 app.get("/api/quote", async (req, res) => {
   const amount = parseFloat(req.query.amount);
-  if (!amount || amount <= 0) {
-    return res.status(400).json({ ok: false, error: "Parámetro 'amount' inválido (CLP)" });
-  }
+  if (!amount || amount <= 0) return res.status(400).json({ ok: false, error: "Amount inválido" });
   try {
     const [clpData, bobData] = await Promise.all([
       queryBinanceP2P("CLP", "BUY"),
       queryBinanceP2P("BOB", "SELL"),
     ]);
-    const rateClpUsdt = clpData.average;
-    const rateUsdtBob = bobData.average;
-    const usdtGross   = amount / rateClpUsdt;
-    const feeUsdt     = usdtGross * SERVICE_FEE;
-    const usdtNet     = usdtGross - feeUsdt;
-    const bobReceived = usdtNet * rateUsdtBob;
-    res.json({
-      ok: true,
-      input: { amount, currency: "CLP" },
-      rates: { clpPerUsdt: rateClpUsdt, bobPerUsdt: rateUsdtBob },
-      breakdown: {
-        usdtGross: usdtGross.toFixed(6),
-        feePercent: SERVICE_FEE * 100,
-        feeUsdt: feeUsdt.toFixed(6),
-        usdtNet: usdtNet.toFixed(6),
-        bobReceived: bobReceived.toFixed(2),
-      },
-      timestamp: new Date().toISOString(),
-    });
+    const usdtGross = amount / clpData.average;
+    const usdtNet = usdtGross * (1 - SERVICE_FEE);
+    const bobReceived = usdtNet * bobData.average;
+    res.json({ ok: true, rates: { clpPerUsdt: clpData.average, bobPerUsdt: bobData.average }, breakdown: { bobReceived: bobReceived.toFixed(2) }, timestamp: new Date().toISOString() });
   } catch (err) {
-    console.error("[/api/quote] Error:", err.message);
     res.status(502).json({ ok: false, error: err.message });
   }
 });
 
-// GET /health
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
